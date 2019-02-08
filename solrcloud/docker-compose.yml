@@ -21,11 +21,11 @@ services:
             - ./data/solr-1/logs:/opt/logs
             - ./data/solr-1/store:/store
             - ./data/solr-1/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
-            - ./data/solr-1/etc/solr-ssl.keystore.jks:/etc/solr-ssl.keystore.jks
+            - ./data/solr-1/ssl-keys:/opt/ssl-keys
         environment:
-            SOLR_SSL_KEY_STORE: /etc/solr-ssl.keystore.jks
+            SOLR_SSL_KEY_STORE: /opt/ssl-keys/solr-ssl.keystore.jks
             SOLR_SSL_KEY_STORE_PASSWORD: secret
-            SOLR_SSL_TRUST_STORE: /etc/solr-ssl.keystore.jks
+            SOLR_SSL_TRUST_STORE: /opt/ssl-keys/solr-ssl.keystore.jks
             SOLR_SSL_TRUST_STORE_PASSWORD: secret
             SOLR_SSL_NEED_CLIENT_AUTH: "false"
             SOLR_SSL_WANT_CLIENT_AUTH: "false"

@@ -101,6 +101,7 @@ for ((i=1; i <= SOLRCLOUD_CLUSTER_SIZE ; i++)); do
     mkdir -p ${HOST_DATA_DIR}/store/solr
     mkdir -p ${HOST_DATA_DIR}/store/shared-lib
     cp -r $SZD_HOME/templates/solr/docker-entrypoint-initdb.d ${HOST_DATA_DIR}/
+    cp -r $SZD_HOME/templates/solr/ssl-keys ${HOST_DATA_DIR}/
     chmod -R ugo+rw ${HOST_DATA_DIR}
   fi
 
