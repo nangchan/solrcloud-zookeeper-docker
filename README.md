@@ -1,4 +1,4 @@
-solrcloud-zookeeper-docker
+solrcloud-zookeeper-docker [SSL enabled]
 ================
 
 This project aims to help developers and newbies that would try latest version of SolrCloud (and Zookeeper) in a Docker environment.
