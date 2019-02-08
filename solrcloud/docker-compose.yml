@@ -17,11 +17,21 @@ services:
         restart: always
         ports:
             - 8081:8081
+            - 8984:8984
         volumes:
             - ./data/solr-1/logs:/opt/logs
             - ./data/solr-1/store:/store
             - ./data/solr-1/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
+            - ./data/solr-1/etc/solr-ssl.keystore.jks:/etc/solr-ssl.keystore.jks
         environment:
+            SOLR_SSL_KEY_STORE: /etc/solr-ssl.keystore.jks
+            SOLR_SSL_KEY_STORE_PASSWORD: secret
+            SOLR_SSL_TRUST_STORE: /etc/solr-ssl.keystore.jks
+            SOLR_SSL_TRUST_STORE_PASSWORD: secret
+            SOLR_SSL_NEED_CLIENT_AUTH: "false"
+            SOLR_SSL_WANT_CLIENT_AUTH: "false"
+            SOLR_SSL_KEY_STORE_TYPE: JKS
+            SOLR_SSL_TRUST_STORE_TYPE: JKS
             SOLR_PORT: 8081
             SOLR_HOME: /store/solr
             ZK_HOST: zoo-1:2181
