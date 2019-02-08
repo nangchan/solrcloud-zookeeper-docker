@@ -17,7 +17,6 @@ services:
         restart: always
         ports:
             - 8081:8081
-            - 8984:8984
         volumes:
             - ./data/solr-1/logs:/opt/logs
             - ./data/solr-1/store:/store

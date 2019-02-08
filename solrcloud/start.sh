@@ -176,9 +176,12 @@ done
 echo
 
 echo "SolrCloud cluster running!"
-echo
+echo "=========================="
+
 echo ${HOSTS_CLUSTER}
 
-echo try connecting to http://localhost:8081/solr
-
-
+echo instructions: https://lucene.apache.org/solr/guide/7_0/enabling-ssl.html#run-solrcloud-with-ssl
+echo repo: https://hub.docker.com/_/solr
+echo
+echo try connecting to https://localhost:8081/solr
+echo
