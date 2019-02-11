@@ -34,7 +34,7 @@ export DOCKER_COMPOSE_BIN="sudo docker-compose"
 # check if zookeeper and solr container images are present 
 
 s_container_name=solr
-s_container_version=7.2
+s_container_version=6.6
 
 IMAGE=$($DOCKER_BIN images | grep "${s_container_name} " | grep "${s_container_version} " |  awk '{print $3}')
 if [[ -z $IMAGE ]]; then
