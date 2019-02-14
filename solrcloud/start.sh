@@ -65,6 +65,9 @@ fi
 
 SZD_DATA_DIR=$SZD_HOME/$APP/data
 
+# remove data
+[ -e $SZD_DATA_DIR ] && rm -r $SZD_DATA_DIR
+
 # Need a volume to read the config from
 conf_prefix=zoo-
 conf_container=${conf_prefix}1
