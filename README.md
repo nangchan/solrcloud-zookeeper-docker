@@ -105,5 +105,7 @@ Under Ubuntu you can configure boot start and stop in this way:
 Note:
 The first version of this project was written when there wasn't docker-compose and there weren't official images for Solr, Zookeeper and even Java 8. Hence the project had its own custom images for every piece of the architecture and I had to create the docker network in order to start a zookeeper ensemble. 
 
+To start out clean delete the ./solrcloud/data folder
+
 Finally the official images are ready for almost everything, so I had re-build the entire project from the ground up using docker-compose and official images.
 
