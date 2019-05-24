@@ -13,7 +13,7 @@ services:
             ZOO_LOG_DIR: /opt/persist/logs
             ZOO_DATA_LOG_DIR: /opt/persist/data
     solr-1:
-        image: solr:6.6
+        image: solr:7.2
         restart: always
         ports:
             - 8081:8081
