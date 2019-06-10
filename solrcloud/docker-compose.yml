@@ -4,7 +4,7 @@ services:
         image: zookeeper
         restart: always
         ports:
-          - "2181:2181"
+          - 2181:2181
         volumes:
             - ./data/zoo-1:/opt/persist
         environment:
