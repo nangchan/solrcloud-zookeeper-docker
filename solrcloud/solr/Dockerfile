@@ -1,3 +1,14 @@
+# TO run manually
+# docker exec -it solrcloud_solr-1_1 bash
+
+# Verify that zoo-1 can be reached
+# ping solr-1 && ping zoo-1
+# su solr -c bash
+
+# Afterwards commit container to image
+#docker commit --message "Turn on SSL for Zookeeper and created indexes for Sitecore 9 (unpopulated)" solrcloud_solr-1_1 solrcloud_solr
+#docker commit --message "Turn on SSL for Zookeeper and created indexes for Sitecore 9 (unpopulated)" solrcloud_zoo-1_1 solrcloud_zoo
+
 FROM solr:7.2
 
 # Enable HTTPS
@@ -6,19 +17,19 @@ RUN /opt/solr/server/scripts/cloud-scripts/zkcli.sh -z zoo-1:2181 -cmd clusterpr
 RUN /opt/solr/server/scripts/cloud-scripts/zkcli.sh -z zoo-1:2181 -cmd upconfig -confdir /opt/solr/server/solr/configsets/sitecore_configs/conf -confname sitecore_configs
 
 # Create Sitecore 9 indexes
-RUN /opt/solr/bin/solr create -c Sitecore9_core_index                   -d ../server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1
-RUN /opt/solr/bin/solr create -c Sitecore9_master_index                 -d ../server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1
-RUN /opt/solr/bin/solr create -c Sitecore9_web_index                    -d ../server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1
-RUN /opt/solr/bin/solr create -c Sitecore9_marketingdefinitions_master  -d ../server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1
-RUN /opt/solr/bin/solr create -c Sitecore9_marketingdefinitions_web     -d ../server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1
-RUN /opt/solr/bin/solr create -c Sitecore9_marketing_asset_index_master -d ../server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1
-RUN /opt/solr/bin/solr create -c Sitecore9_marketing_asset_index_web    -d ../server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1
-RUN /opt/solr/bin/solr create -c Sitecore9_testing_index                -d ../server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1
-RUN /opt/solr/bin/solr create -c Sitecore9_suggested_test_index         -d ../server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1
-RUN /opt/solr/bin/solr create -c Sitecore9_fxm_master_index             -d ../server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1
-RUN /opt/solr/bin/solr create -c Sitecore9_fxm_web_index                -d ../server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1
-RUN /opt/solr/bin/solr create -c Sitecore9_xdb                          -d ../server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1
-RUN /opt/solr/bin/solr create -c Sitecore9_xdb_rebuild                  -d ../server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1
+RUN /opt/solr/bin/solr create -c Sitecore9_core_index                   -d /opt/solr/server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1
+RUN /opt/solr/bin/solr create -c Sitecore9_master_index                 -d /opt/solr/server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1
+RUN /opt/solr/bin/solr create -c Sitecore9_web_index                    -d /opt/solr/server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1
+RUN /opt/solr/bin/solr create -c Sitecore9_marketingdefinitions_master  -d /opt/solr/server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1
+RUN /opt/solr/bin/solr create -c Sitecore9_marketingdefinitions_web     -d /opt/solr/server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1
+RUN /opt/solr/bin/solr create -c Sitecore9_marketing_asset_index_master -d /opt/solr/server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1
+RUN /opt/solr/bin/solr create -c Sitecore9_marketing_asset_index_web    -d /opt/solr/server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1
+RUN /opt/solr/bin/solr create -c Sitecore9_testing_index                -d /opt/solr/server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1
+RUN /opt/solr/bin/solr create -c Sitecore9_suggested_test_index         -d /opt/solr/server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1
+RUN /opt/solr/bin/solr create -c Sitecore9_fxm_master_index             -d /opt/solr/server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1
+RUN /opt/solr/bin/solr create -c Sitecore9_fxm_web_index                -d /opt/solr/server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1
+RUN /opt/solr/bin/solr create -c Sitecore9_xdb                          -d /opt/solr/server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1
+RUN /opt/solr/bin/solr create -c Sitecore9_xdb_rebuild                  -d /opt/solr/server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1
 
 # Delete Sitecore 9 indexes if needed
 # cd /opt/solr/bin
