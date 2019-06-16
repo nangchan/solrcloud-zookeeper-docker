@@ -1,10 +1,15 @@
 version: '2.1'
+# use existing network instead of creating solrcloud_default
+networks:
+  default:
+    external:
+      name: nat
 services:
     zoo-1:
         image: zookeeper
         restart: always
         ports:
-          - 2181:2181
+            - 2181:2181
         volumes:
             - ./data/zoo-1:/opt/persist
         environment:
