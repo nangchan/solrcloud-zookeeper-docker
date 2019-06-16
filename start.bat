@@ -13,5 +13,6 @@ REM chmod -R ugo+rw ./solrcloud/data/solr-1
 
 :: does not work on lcow (linux containers on windows)
 REM docker network create solrcloud_default
+:: removing --no-start will cause docker-compose to error since tty=true
 docker-compose -f ./solrcloud/docker-compose.yml up --no-start
 docker-compose -f ./solrcloud/docker-compose.yml start

@@ -5,6 +5,16 @@ networks:
     external:
       name: nat
 services:
+    sitecore:
+        build: ./sitecore
+        container_name: sitecore
+        #image: mcr.microsoft.com/windows/servercore:ltsc2019
+        hostname: sitecore-docker
+        #domainname: sitecore-docker.local
+        tty: true
+        #stdin_open: true
+        ports:
+            - 8001:80
     zoo-1:
         image: zookeeper
         restart: always
