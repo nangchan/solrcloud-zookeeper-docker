@@ -1,4 +1,4 @@
-version: '2'
+version: '2.1'
 services:
     zoo-1:
         image: zookeeper
@@ -15,6 +15,13 @@ services:
     solr-1:
         image: solr:7.2
         restart: always
+        # lcow (linux containers on windows) ignores linux
+        # users so it defaults to root hence using runuser
+        # to explicitly set service user
+        entrypoint: /bin/bash -c
+        command: |
+            "cd /opt/docker-solr/scripts/
+            runuser solr -c \"docker-entrypoint.sh solr-foreground\""
         ports:
             - 8081:8081
         volumes:
