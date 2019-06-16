@@ -6,8 +6,6 @@
 # To force build remove the image or run the following:
 # docker-compose -f .\docker-compose.yml build sitecore
 
-# NOTE: If this is ran directly on the machine a restart needs to occur
-
 FROM mcr.microsoft.com/windows/servercore:ltsc2019
 
 # Uses dism.exe to install the IIS role.
@@ -34,8 +32,12 @@ RUN powershell choco install -y vcredist2017
 # Install Node for Sitecore JSS
 RUN powershell choco install -y nodejs-lts
 
+# Install Sitecore 9 dependencies
+RUN powershell choco install -y UrlRewrite
+RUN powershell choco install -y webdeploy
+
 # MISCELLANEOUS COMMANDS WHEN EXECUTING ON MACHINE
-# Start service
+# Start IIS Remote Manager service
 #RUN powershell Start-service WMSVC
 # Restart to activate Administrator changes
 #RUN powershell Restart-Service WMSVC
@@ -46,4 +48,6 @@ RUN powershell choco install -y nodejs-lts
 # Creates an HTML file and adds content to this file.
 #RUN echo "Hello World - Dockerfile" > c:\inetpub\wwwroot\index.html
 # Check installed features
-# Get-WindowsFeature -ComputerName Server01 | Where Installed
+#Get-WindowsFeature -ComputerName Server01 | Where Installed
+# List Chocolatey installed packages
+#choco list --local-only

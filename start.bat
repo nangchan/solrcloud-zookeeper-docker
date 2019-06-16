@@ -6,8 +6,12 @@ mkdir .\solrcloud\data\zoo-1\data
 mkdir .\solrcloud\data\solr-1\logs
 mkdir .\solrcloud\data\solr-1\store\solr
 mkdir .\solrcloud\data\solr-1\store\shared-lib
-xcopy .\templates\solr\docker-entrypoint-initdb.d .\solrcloud\data\solr-1\docker-entrypoint-initdb.d\
-xcopy .\templates\solr\ssl-keys .\solrcloud\data\solr-1\ssl-keys\
+
+:: copys all files/folders even if empty
+xcopy /s /e .\templates\solr\docker-entrypoint-initdb.d .\solrcloud\data\solr-1\docker-entrypoint-initdb.d\
+xcopy /s /e .\templates\solr\ssl-keys .\solrcloud\data\solr-1\ssl-keys\
+:: added configsets
+xcopy /s /e .\templates\solr\configsets\sitecore_configs .\solrcloud\data\solr-1\configsets\sitecore_configs\
 
 REM chmod -R ugo+rw ./solrcloud/data/solr-1
 

@@ -28,6 +28,8 @@ services:
             ZOO_LOG_DIR: /opt/persist/logs
             ZOO_DATA_LOG_DIR: /opt/persist/data
     solr-1:
+        # Build does not work without zoo and solr server up and running
+        #build: ./solr
         image: solr:7.2
         restart: always
         # lcow (linux containers on windows) ignores linux
@@ -40,6 +42,7 @@ services:
         ports:
             - 8081:8081
         volumes:
+            - ./data/solr-1/configsets/sitecore_configs:/opt/solr/server/solr/configsets/sitecore_configs
             - ./data/solr-1/logs:/opt/logs
             - ./data/solr-1/store:/store
             - ./data/solr-1/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
