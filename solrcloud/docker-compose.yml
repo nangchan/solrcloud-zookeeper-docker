@@ -1,67 +1,127 @@
+# docker-compose -f .\solrcloud\docker-compose.yml up --no-start
+# docker-compose -f .\solrcloud\docker-compose.yml start
+# docker-compose -f .\solrcloud\docker-compose.yml down
 version: '2.1'
-# use existing network instead of creating solrcloud_default
+# NOTE: experimental feature needs to be turned on so
+#     that linux containers can run on windows hyper-v
+# Use existing network instead of creating solrcloud_default
 networks:
   default:
     external:
       name: nat
 services:
-    sitecore:
-        build: ./sitecore
-        container_name: sitecore
-        #image: mcr.microsoft.com/windows/servercore:ltsc2019
-        hostname: sitecore-docker
-        #domainname: sitecore-docker.local
-        tty: true
-        #stdin_open: true
-        ports:
-            - 8001:80
-    zoo-1:
-        image: zookeeper
-        restart: always
-        ports:
-            - 2181:2181
-        volumes:
-            - ./data/zoo-1:/opt/persist
-        environment:
-            ZOO_MY_ID: 1
-            ZOO_PORT: 2181
-            ZOO_LOG_DIR: /opt/persist/logs
-            ZOO_DATA_LOG_DIR: /opt/persist/data
-    solr-1:
-        # Build does not work without zoo and solr server up and running
-        #build: ./solr
-        image: solr:7.2
-        restart: always
-        # lcow (linux containers on windows) ignores linux
-        # users so it defaults to root hence using runuser
-        # to explicitly set service user
-        entrypoint: /bin/bash -c
-        command: |
-            "cd /opt/docker-solr/scripts/
-            runuser solr -c \"docker-entrypoint.sh solr-foreground\""
-        ports:
-            - 8081:8081
-        volumes:
-            - ./data/solr-1/configsets/sitecore_configs:/opt/solr/server/solr/configsets/sitecore_configs
-            - ./data/solr-1/logs:/opt/logs
-            - ./data/solr-1/store:/store
-            - ./data/solr-1/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
-            - ./data/solr-1/ssl-keys:/opt/ssl-keys
-        environment:
-            SOLR_SSL_KEY_STORE: /opt/ssl-keys/solr-ssl.keystore.jks
-            SOLR_SSL_KEY_STORE_PASSWORD: secret
-            SOLR_SSL_TRUST_STORE: /opt/ssl-keys/solr-ssl.keystore.jks
-            SOLR_SSL_TRUST_STORE_PASSWORD: secret
-            SOLR_SSL_NEED_CLIENT_AUTH: "false"
-            SOLR_SSL_WANT_CLIENT_AUTH: "false"
-            SOLR_SSL_KEY_STORE_TYPE: JKS
-            SOLR_SSL_TRUST_STORE_TYPE: JKS
-            SOLR_PORT: 8081
-            SOLR_HOME: /store/solr
-            ZK_HOST: zoo-1:2181
-            SOLR_LOGS_DIR: /opt/logs
-            SOLR_HOST: solr-1
-            SOLR_HEAP:
-            SOLR_JAVA_MEM:
-        depends_on:
-          - zoo-1
+  #mongo:
+  #  image: mongo:3.6
+  #  container_name: mongo
+  #  restart: always
+  #  ports:
+  #    - 27017:27017
+  # SQL Server needs more than 2GB of RAM therefore
+  # switch to linux containers and adjust RAM to 3GB
+  #sqlserver:
+  #  image: mcr.microsoft.com/mssql/server:2017-latest-ubuntu
+  #  container_name: sqlserver
+  #  hostname: sqlserver-docker
+  #  ports:
+  #    - 1444:1433
+  #  volumes:
+  #    - ./data/sqlserver:/opt/persist
+  #  environment:
+  #    ACCEPT_EULA: "Y"
+  #    MSSQL_SA_PASSWORD: "goBoing0"
+  #    MSSQL_MEMORY_LIMIT_MB: "3000m"
+  #  mem_limit: 3000000000
+  #sitecore:
+  #  build: ./sitecore
+  #  container_name: sitecore
+  #  #image: mcr.microsoft.com/windows/servercore:ltsc2019
+  #  hostname: sitecore-docker
+  #  #domainname: sitecore-docker.local
+  #  tty: true
+  #  #stdin_open: true
+  #  ports:
+  #    - 8001:80
+  zoo-1:
+    #build: ./zoo
+    image: zookeeper
+    tty: true
+    #restart: always
+    #hostname: zoo-1
+    ports:
+      - 2181:2181
+    volumes:
+      - ./data/zoo-1:/opt/persist
+    environment:
+      ZOO_MY_ID: 1
+      ZOO_PORT: 2181
+      ZOO_LOG_DIR: /opt/persist/logs
+      ZOO_DATA_LOG_DIR: /opt/persist/data
+  solr-1:
+    # Build does not work without zoo and solr server up and running
+    #build: ./solr
+    image: solr:7.2
+    tty: true
+    #hostname: solr-1
+    #restart: always
+    # lcow (linux containers on windows) ignores linux
+    # users so it defaults to root hence using runuser
+    # to explicitly set service user
+    entrypoint: /bin/bash -c
+    command: |
+      "touch /opt/logs/docker-compose-out.log
+      ! test -d '/store/solr/Sitecore9_core_index_shard1_replica_n1'                    && sleep 3  && runuser solr -c '/opt/solr/server/scripts/cloud-scripts/zkcli.sh -z zoo-1:2181 -cmd clusterprop -name urlScheme -val https' >> /opt/logs/docker-compose-out.log &
+      ! test -d '/store/solr/Sitecore9_core_index_shard1_replica_n1'                    && sleep 6  && runuser solr -c '/opt/solr/server/scripts/cloud-scripts/zkcli.sh -z zoo-1:2181 -cmd upconfig -confdir /opt/solr/server/solr/configsets/sitecore_configs/conf -confname sitecore_configs' >> /opt/logs/docker-compose-out.log &
+      ! test -d '/store/solr/Sitecore9_core_index_shard1_replica_n1'                    && sleep 9  && runuser solr -c '/opt/solr/bin/solr create -c Sitecore9_core_index                   -d /opt/solr/server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1' >> /opt/logs/docker-compose-out.log &
+      ! test -d '/store/solr/Sitecore9_master_index_shard1_replica_n1'                  && sleep 12 && runuser solr -c '/opt/solr/bin/solr create -c Sitecore9_master_index                 -d /opt/solr/server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1' >> /opt/logs/docker-compose-out.log &
+      ! test -d '/store/solr/Sitecore9_web_index_shard1_replica_n1'                     && sleep 15 && runuser solr -c '/opt/solr/bin/solr create -c Sitecore9_web_index                    -d /opt/solr/server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1' >> /opt/logs/docker-compose-out.log &
+      ! test -d '/store/solr/Sitecore9_marketingdefinitions_master_shard1_replica_n1'   && sleep 18 && runuser solr -c '/opt/solr/bin/solr create -c Sitecore9_marketingdefinitions_master  -d /opt/solr/server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1' >> /opt/logs/docker-compose-out.log &
+      ! test -d '/store/solr/Sitecore9_marketingdefinitions_web_shard1_replica_n1'      && sleep 21 && runuser solr -c '/opt/solr/bin/solr create -c Sitecore9_marketingdefinitions_web     -d /opt/solr/server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1' >> /opt/logs/docker-compose-out.log &
+      ! test -d '/store/solr/Sitecore9_marketing_asset_index_master_shard1_replica_n1'  && sleep 24 && runuser solr -c '/opt/solr/bin/solr create -c Sitecore9_marketing_asset_index_master -d /opt/solr/server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1' >> /opt/logs/docker-compose-out.log &
+      ! test -d '/store/solr/Sitecore9_marketing_asset_index_web_shard1_replica_n1'     && sleep 27 && runuser solr -c '/opt/solr/bin/solr create -c Sitecore9_marketing_asset_index_web    -d /opt/solr/server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1' >> /opt/logs/docker-compose-out.log &
+      ! test -d '/store/solr/Sitecore9_testing_index_shard1_replica_n1'                 && sleep 30 && runuser solr -c '/opt/solr/bin/solr create -c Sitecore9_testing_index                -d /opt/solr/server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1' >> /opt/logs/docker-compose-out.log &
+      ! test -d '/store/solr/Sitecore9_suggested_test_index_shard1_replica_n1'          && sleep 33 && runuser solr -c '/opt/solr/bin/solr create -c Sitecore9_suggested_test_index         -d /opt/solr/server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1' >> /opt/logs/docker-compose-out.log &
+      ! test -d '/store/solr/Sitecore9_fxm_master_index_shard1_replica_n1'              && sleep 36 && runuser solr -c '/opt/solr/bin/solr create -c Sitecore9_fxm_master_index             -d /opt/solr/server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1' >> /opt/logs/docker-compose-out.log &
+      ! test -d '/store/solr/Sitecore9_fxm_web_index_shard1_replica_n1'                 && sleep 39 && runuser solr -c '/opt/solr/bin/solr create -c Sitecore9_fxm_web_index                -d /opt/solr/server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1' >> /opt/logs/docker-compose-out.log &
+      ! test -d '/store/solr/Sitecore9_xdb_shard1_replica_n1'                           && sleep 42 && runuser solr -c '/opt/solr/bin/solr create -c Sitecore9_xdb                          -d /opt/solr/server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1' >> /opt/logs/docker-compose-out.log &
+      ! test -d '/store/solr/Sitecore9_xdb_rebuild_shard1_replica_n1'                   && sleep 45 && runuser solr -c '/opt/solr/bin/solr create -c Sitecore9_xdb_rebuild                  -d /opt/solr/server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1' >> /opt/logs/docker-compose-out.log &
+      cd /opt/docker-solr/scripts/
+      runuser solr -c 'docker-entrypoint.sh solr-foreground'"
+    ports:
+      - 8081:8081
+    volumes:
+      - ./data/solr-1/configsets/sitecore_configs:/opt/solr/server/solr/configsets/sitecore_configs
+      - ./data/solr-1/logs:/opt/logs
+      - ./data/solr-1/store:/store
+      - ./data/solr-1/docker-entrypoint-initdb.d:/docker-entrypoint-initdb.d
+      - ./data/solr-1/ssl-keys:/opt/ssl-keys
+    environment:
+      # REF: https://lucene.apache.org/solr/guide/7_6/enabling-ssl.html
+      # Enables HTTPS. It is implictly true if you set SOLR_SSL_KEY_STORE. Use this config
+      # to enable https module with custom jetty configuration.
+      SOLR_SSL_ENABLED: "true"
+      # Uncomment to set SSL-related system properties
+      # Be sure to update the paths to the correct keystore for your environment
+      SOLR_SSL_KEY_STORE: /opt/ssl-keys/solr-ssl.keystore.jks
+      SOLR_SSL_KEY_STORE_PASSWORD: secret
+      SOLR_SSL_TRUST_STORE: /opt/ssl-keys/solr-ssl.keystore.jks
+      SOLR_SSL_TRUST_STORE_PASSWORD: secret
+      # Require clients to authenticate
+      SOLR_SSL_NEED_CLIENT_AUTH: "false"
+      # Enable clients to authenticate (but not require)
+      SOLR_SSL_WANT_CLIENT_AUTH: "false"
+      # SSL Certificates contain host/ip "peer name" information that is validated by default. Setting
+      # this to false can be useful to disable these checks when re-using a certificate on many hosts
+      #SOLR_SSL_CHECK_PEER_NAME: "true"
+      # Override Key/Trust Store types if necessary
+      SOLR_SSL_KEY_STORE_TYPE: JKS
+      SOLR_SSL_TRUST_STORE_TYPE: JKS
+      # Set Solr Port
+      SOLR_PORT: 8081
+      SOLR_HOME: /store/solr
+      ZK_HOST: zoo-1:2181
+      SOLR_LOGS_DIR: /opt/logs
+      SOLR_HOST: solr-1
+      SOLR_HEAP:
+      SOLR_JAVA_MEM:
+    depends_on:
+      - zoo-1
