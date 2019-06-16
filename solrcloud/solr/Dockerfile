@@ -9,6 +9,9 @@
 #docker commit --message "Turn on SSL for Zookeeper and created indexes for Sitecore 9 (unpopulated)" solrcloud_solr-1_1 solrcloud_solr
 #docker commit --message "Turn on SSL for Zookeeper and created indexes for Sitecore 9 (unpopulated)" solrcloud_zoo-1_1 solrcloud_zoo
 
+# NOTE: COPY only works inside the folder containing the Dockerfile
+#       https://docker-host.local:8081/solr/
+
 FROM solr:7.2
 
 # Enable HTTPS
