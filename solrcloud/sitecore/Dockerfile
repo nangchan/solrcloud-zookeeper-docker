@@ -1,15 +1,44 @@
-# To run docker compose
-# docker-compose -f .\docker-compose.yml up --no-start sitecore
-# docker-compose -f .\docker-compose.yml start sitecore
-# docker-compose -f .\docker-compose.yml down
-
-# To force build remove the image or run the following:
-# docker-compose -f .\docker-compose.yml build sitecore
-
 FROM mcr.microsoft.com/windows/servercore:ltsc2019
 
 # Uses dism.exe to install the IIS role.
-RUN DISM /Online /Enable-Feature /FeatureName:IIS-WebServer /All /NoRestart
+#RUN DISM /Online /Enable-Feature /FeatureName:IIS-WebServer /All /NoRestart
+
+# Install IIS and ASP.net 4.7
+
+RUN powershell Enable-WindowsOptionalFeature -Online -FeatureName IIS-WebServerRole
+RUN powershell Enable-WindowsOptionalFeature -Online -FeatureName IIS-WebServer
+RUN powershell Enable-WindowsOptionalFeature -Online -FeatureName IIS-CommonHttpFeatures
+RUN powershell Enable-WindowsOptionalFeature -Online -FeatureName IIS-HttpErrors
+RUN powershell Enable-WindowsOptionalFeature -Online -FeatureName IIS-HttpRedirect
+RUN powershell Enable-WindowsOptionalFeature -Online -FeatureName IIS-ApplicationDevelopment
+
+RUN powershell Enable-WindowsOptionalFeature -online -FeatureName NetFx4Extended-ASPNET45
+RUN powershell Enable-WindowsOptionalFeature -Online -FeatureName IIS-NetFxExtensibility45
+
+RUN powershell Enable-WindowsOptionalFeature -Online -FeatureName IIS-HealthAndDiagnostics
+RUN powershell Enable-WindowsOptionalFeature -Online -FeatureName IIS-HttpLogging
+RUN powershell Enable-WindowsOptionalFeature -Online -FeatureName IIS-LoggingLibraries
+RUN powershell Enable-WindowsOptionalFeature -Online -FeatureName IIS-RequestMonitor
+RUN powershell Enable-WindowsOptionalFeature -Online -FeatureName IIS-HttpTracing
+RUN powershell Enable-WindowsOptionalFeature -Online -FeatureName IIS-Security
+RUN powershell Enable-WindowsOptionalFeature -Online -FeatureName IIS-RequestFiltering
+RUN powershell Enable-WindowsOptionalFeature -Online -FeatureName IIS-Performance
+RUN powershell Enable-WindowsOptionalFeature -Online -FeatureName IIS-WebServerManagementTools
+RUN powershell Enable-WindowsOptionalFeature -Online -FeatureName IIS-IIS6ManagementCompatibility
+RUN powershell Enable-WindowsOptionalFeature -Online -FeatureName IIS-Metabase
+RUN powershell Enable-WindowsOptionalFeature -Online -FeatureName IIS-ManagementConsole
+RUN powershell Enable-WindowsOptionalFeature -Online -FeatureName IIS-BasicAuthentication
+RUN powershell Enable-WindowsOptionalFeature -Online -FeatureName IIS-WindowsAuthentication
+RUN powershell Enable-WindowsOptionalFeature -Online -FeatureName IIS-StaticContent
+RUN powershell Enable-WindowsOptionalFeature -Online -FeatureName IIS-DefaultDocument
+RUN powershell Enable-WindowsOptionalFeature -Online -FeatureName IIS-WebSockets
+RUN powershell Enable-WindowsOptionalFeature -Online -FeatureName IIS-ApplicationInit
+RUN powershell Enable-WindowsOptionalFeature -Online -FeatureName IIS-ISAPIExtensions
+RUN powershell Enable-WindowsOptionalFeature -Online -FeatureName IIS-ISAPIFilter
+RUN powershell Enable-WindowsOptionalFeature -Online -FeatureName IIS-HttpCompressionStatic
+
+RUN powershell Enable-WindowsOptionalFeature -Online -FeatureName IIS-ASPNET45
+
 
 # Install IIS Windows Management Server
 # On Client Install IIS Manager for Remote Administration 1.2 - https://www.iis.net/downloads/microsoft/iis-manager
@@ -51,3 +80,21 @@ RUN powershell choco install -y webdeploy
 #Get-WindowsFeature -ComputerName Server01 | Where Installed
 # List Chocolatey installed packages
 #choco list --local-only
+
+
+# Install Sitecore9 WebSite
+# C:\inetpub\wwwroot\Sitecore9.local should be mapped or replaced
+
+RUN mkdir C:\inetpub\wwwroot\Sitecore9.local
+#RUN powershell Import-Module WebAdministration
+RUN powershell New-WebAppPool -name "Sitecore9AppPool"
+RUN powershell New-WebSite -name "Sitecore9" -PhysicalPath "%SystemDrive%\inetpub\wwwroot\Sitecore9.local" -HostHeader "Sitecore9.dev.local" -ApplicationPool "Sitecore9AppPool"
+
+
+# UPDATE FOR YOUR ENVIRONMENT
+# ===========================
+
+# Add link back to docker host
+RUN powershell Add-Content C:\Windows\System32\drivers\etc\hosts '172.29.160.1 docker-host.local'
+RUN powershell Add-Content C:\Windows\System32\drivers\etc\hosts '172.29.160.1 Sitecore9.identityserver'
+RUN powershell Add-Content C:\Windows\System32\drivers\etc\hosts '172.29.160.1 Sitecore9.xconnect'

@@ -1,36 +1,46 @@
+# Reference:https://docs.microsoft.com/en-us/virtualization/windowscontainers/deploy-containers/linux-containers
+#           https://weblog.west-wind.com/posts/2017/May/25/Automating-IIS-Feature-Installation-with-Powershell
+#           https://peter.hahndorf.eu/blog/WindowsFeatureViaCmd
+#           https://docs.microsoft.com/en-us/virtualization/windowscontainers/manage-docker/manage-windows-dockerfile
+#           https://github.com/moby/moby/pull/37296
+#           https://jtreminio.com/blog/running-docker-containers-as-current-host-user/
+
+# To run docker compose
 # docker-compose -f .\solrcloud\docker-compose.yml up --no-start
 # docker-compose -f .\solrcloud\docker-compose.yml start
 # docker-compose -f .\solrcloud\docker-compose.yml down
+
+# To force build remove the image or run the following:
+# docker-compose -f .\docker-compose.yml build sitecore
+
+# NOTE: experimental feature enables linux containers to run under windows hyper-v
+
 version: '2.1'
-# NOTE: experimental feature needs to be turned on so
-#     that linux containers can run on windows hyper-v
-# Use existing network instead of creating solrcloud_default
-networks:
-  default:
-    external:
-      name: nat
+# Uncomment for Sitecore on Windows, use existing network instead of creating solrcloud_default
+#networks:
+#  default:
+#    external:
+#      name: nat
 services:
-  #mongo:
-  #  image: mongo:3.6
-  #  container_name: mongo
-  #  restart: always
-  #  ports:
-  #    - 27017:27017
+  mongo:
+    image: mongo:3.6
+    container_name: mongo
+    restart: always
+    ports:
+      - 27017:27017
   # SQL Server needs more than 2GB of RAM therefore
-  # switch to linux containers and adjust RAM to 3GB
-  #sqlserver:
-  #  image: mcr.microsoft.com/mssql/server:2017-latest-ubuntu
-  #  container_name: sqlserver
-  #  hostname: sqlserver-docker
-  #  ports:
-  #    - 1444:1433
-  #  volumes:
-  #    - ./data/sqlserver:/opt/persist
-  #  environment:
-  #    ACCEPT_EULA: "Y"
-  #    MSSQL_SA_PASSWORD: "goBoing0"
-  #    MSSQL_MEMORY_LIMIT_MB: "3000m"
-  #  mem_limit: 3000000000
+  # switch to linux containers
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2017-latest-ubuntu
+    container_name: sqlserver
+    hostname: sqlserver-docker
+    ports:
+      - 1444:1433
+    volumes:
+      - ./data/sqlserver:/opt/persist
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "goBoing0"
   #sitecore:
   #  build: ./sitecore
   #  container_name: sitecore
@@ -40,7 +50,9 @@ services:
   #  tty: true
   #  #stdin_open: true
   #  ports:
-  #    - 8001:80
+  #    - 8000:80
+  #  volumes:
+  #    - C:/temp/Sitecore9.local:C:/inetpub/wwwroot/Sitecore9.local
   zoo-1:
     #build: ./zoo
     image: zookeeper
@@ -52,6 +64,7 @@ services:
     volumes:
       - ./data/zoo-1:/opt/persist
     environment:
+      SOLR_SSL_ENABLED: "true"
       ZOO_MY_ID: 1
       ZOO_PORT: 2181
       ZOO_LOG_DIR: /opt/persist/logs
@@ -69,23 +82,42 @@ services:
     entrypoint: /bin/bash -c
     command: |
       "touch /opt/logs/docker-compose-out.log
-      ! test -d '/store/solr/Sitecore9_core_index_shard1_replica_n1'                    && sleep 3  && runuser solr -c '/opt/solr/server/scripts/cloud-scripts/zkcli.sh -z zoo-1:2181 -cmd clusterprop -name urlScheme -val https' >> /opt/logs/docker-compose-out.log &
-      ! test -d '/store/solr/Sitecore9_core_index_shard1_replica_n1'                    && sleep 6  && runuser solr -c '/opt/solr/server/scripts/cloud-scripts/zkcli.sh -z zoo-1:2181 -cmd upconfig -confdir /opt/solr/server/solr/configsets/sitecore_configs/conf -confname sitecore_configs' >> /opt/logs/docker-compose-out.log &
-      ! test -d '/store/solr/Sitecore9_core_index_shard1_replica_n1'                    && sleep 9  && runuser solr -c '/opt/solr/bin/solr create -c Sitecore9_core_index                   -d /opt/solr/server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1' >> /opt/logs/docker-compose-out.log &
-      ! test -d '/store/solr/Sitecore9_master_index_shard1_replica_n1'                  && sleep 12 && runuser solr -c '/opt/solr/bin/solr create -c Sitecore9_master_index                 -d /opt/solr/server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1' >> /opt/logs/docker-compose-out.log &
-      ! test -d '/store/solr/Sitecore9_web_index_shard1_replica_n1'                     && sleep 15 && runuser solr -c '/opt/solr/bin/solr create -c Sitecore9_web_index                    -d /opt/solr/server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1' >> /opt/logs/docker-compose-out.log &
-      ! test -d '/store/solr/Sitecore9_marketingdefinitions_master_shard1_replica_n1'   && sleep 18 && runuser solr -c '/opt/solr/bin/solr create -c Sitecore9_marketingdefinitions_master  -d /opt/solr/server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1' >> /opt/logs/docker-compose-out.log &
-      ! test -d '/store/solr/Sitecore9_marketingdefinitions_web_shard1_replica_n1'      && sleep 21 && runuser solr -c '/opt/solr/bin/solr create -c Sitecore9_marketingdefinitions_web     -d /opt/solr/server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1' >> /opt/logs/docker-compose-out.log &
-      ! test -d '/store/solr/Sitecore9_marketing_asset_index_master_shard1_replica_n1'  && sleep 24 && runuser solr -c '/opt/solr/bin/solr create -c Sitecore9_marketing_asset_index_master -d /opt/solr/server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1' >> /opt/logs/docker-compose-out.log &
-      ! test -d '/store/solr/Sitecore9_marketing_asset_index_web_shard1_replica_n1'     && sleep 27 && runuser solr -c '/opt/solr/bin/solr create -c Sitecore9_marketing_asset_index_web    -d /opt/solr/server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1' >> /opt/logs/docker-compose-out.log &
-      ! test -d '/store/solr/Sitecore9_testing_index_shard1_replica_n1'                 && sleep 30 && runuser solr -c '/opt/solr/bin/solr create -c Sitecore9_testing_index                -d /opt/solr/server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1' >> /opt/logs/docker-compose-out.log &
-      ! test -d '/store/solr/Sitecore9_suggested_test_index_shard1_replica_n1'          && sleep 33 && runuser solr -c '/opt/solr/bin/solr create -c Sitecore9_suggested_test_index         -d /opt/solr/server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1' >> /opt/logs/docker-compose-out.log &
-      ! test -d '/store/solr/Sitecore9_fxm_master_index_shard1_replica_n1'              && sleep 36 && runuser solr -c '/opt/solr/bin/solr create -c Sitecore9_fxm_master_index             -d /opt/solr/server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1' >> /opt/logs/docker-compose-out.log &
-      ! test -d '/store/solr/Sitecore9_fxm_web_index_shard1_replica_n1'                 && sleep 39 && runuser solr -c '/opt/solr/bin/solr create -c Sitecore9_fxm_web_index                -d /opt/solr/server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1' >> /opt/logs/docker-compose-out.log &
-      ! test -d '/store/solr/Sitecore9_xdb_shard1_replica_n1'                           && sleep 42 && runuser solr -c '/opt/solr/bin/solr create -c Sitecore9_xdb                          -d /opt/solr/server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1' >> /opt/logs/docker-compose-out.log &
-      ! test -d '/store/solr/Sitecore9_xdb_rebuild_shard1_replica_n1'                   && sleep 45 && runuser solr -c '/opt/solr/bin/solr create -c Sitecore9_xdb_rebuild                  -d /opt/solr/server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1' >> /opt/logs/docker-compose-out.log &
+      ! test -d '/store/solr/Sitecore9_core_index_shard1_replica_n1'                    && sleep 3  && /opt/solr/server/scripts/cloud-scripts/zkcli.sh -z zoo-1:2181 -cmd clusterprop -name urlScheme -val https >> /opt/logs/docker-compose-out.log &
+      ! test -d '/store/solr/Sitecore9_core_index_shard1_replica_n1'                    && sleep 6  && /opt/solr/server/scripts/cloud-scripts/zkcli.sh -z zoo-1:2181 -cmd upconfig -confdir /opt/solr/server/solr/configsets/sitecore_configs/conf -confname sitecore_configs >> /opt/logs/docker-compose-out.log &
+      ! test -d '/store/solr/Sitecore9_core_index_shard1_replica_n1'                    && sleep 9  && /opt/solr/bin/solr create -c Sitecore9_core_index                   -d /opt/solr/server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1 >> /opt/logs/docker-compose-out.log &
+      ! test -d '/store/solr/Sitecore9_master_index_shard1_replica_n1'                  && sleep 12 && /opt/solr/bin/solr create -c Sitecore9_master_index                 -d /opt/solr/server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1 >> /opt/logs/docker-compose-out.log &
+      ! test -d '/store/solr/Sitecore9_web_index_shard1_replica_n1'                     && sleep 15 && /opt/solr/bin/solr create -c Sitecore9_web_index                    -d /opt/solr/server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1 >> /opt/logs/docker-compose-out.log &
+      ! test -d '/store/solr/Sitecore9_marketingdefinitions_master_shard1_replica_n1'   && sleep 18 && /opt/solr/bin/solr create -c Sitecore9_marketingdefinitions_master  -d /opt/solr/server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1 >> /opt/logs/docker-compose-out.log &
+      ! test -d '/store/solr/Sitecore9_marketingdefinitions_web_shard1_replica_n1'      && sleep 21 && /opt/solr/bin/solr create -c Sitecore9_marketingdefinitions_web     -d /opt/solr/server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1 >> /opt/logs/docker-compose-out.log &
+      ! test -d '/store/solr/Sitecore9_marketing_asset_index_master_shard1_replica_n1'  && sleep 24 && /opt/solr/bin/solr create -c Sitecore9_marketing_asset_index_master -d /opt/solr/server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1 >> /opt/logs/docker-compose-out.log &
+      ! test -d '/store/solr/Sitecore9_marketing_asset_index_web_shard1_replica_n1'     && sleep 27 && /opt/solr/bin/solr create -c Sitecore9_marketing_asset_index_web    -d /opt/solr/server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1 >> /opt/logs/docker-compose-out.log &
+      ! test -d '/store/solr/Sitecore9_testing_index_shard1_replica_n1'                 && sleep 30 && /opt/solr/bin/solr create -c Sitecore9_testing_index                -d /opt/solr/server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1 >> /opt/logs/docker-compose-out.log &
+      ! test -d '/store/solr/Sitecore9_suggested_test_index_shard1_replica_n1'          && sleep 33 && /opt/solr/bin/solr create -c Sitecore9_suggested_test_index         -d /opt/solr/server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1 >> /opt/logs/docker-compose-out.log &
+      ! test -d '/store/solr/Sitecore9_fxm_master_index_shard1_replica_n1'              && sleep 36 && /opt/solr/bin/solr create -c Sitecore9_fxm_master_index             -d /opt/solr/server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1 >> /opt/logs/docker-compose-out.log &
+      ! test -d '/store/solr/Sitecore9_fxm_web_index_shard1_replica_n1'                 && sleep 39 && /opt/solr/bin/solr create -c Sitecore9_fxm_web_index                -d /opt/solr/server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1 >> /opt/logs/docker-compose-out.log &
+      ! test -d '/store/solr/Sitecore9_xdb_shard1_replica_n1'                           && sleep 42 && /opt/solr/bin/solr create -c Sitecore9_xdb                          -d /opt/solr/server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1 >> /opt/logs/docker-compose-out.log &
+      ! test -d '/store/solr/Sitecore9_xdb_rebuild_shard1_replica_n1'                   && sleep 45 && /opt/solr/bin/solr create -c Sitecore9_xdb_rebuild                  -d /opt/solr/server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1 >> /opt/logs/docker-compose-out.log &
       cd /opt/docker-solr/scripts/
-      runuser solr -c 'docker-entrypoint.sh solr-foreground'"
+      docker-entrypoint.sh solr-foreground"
+    # On LCOW (Linux Containers on Windows) user defaults to root so therefore we need to switch user to solr
+    #  "touch /opt/logs/docker-compose-out.log
+    #  ! test -d '/store/solr/Sitecore9_core_index_shard1_replica_n1'                    && sleep 3  && runuser solr -c '/opt/solr/server/scripts/cloud-scripts/zkcli.sh -z zoo-1:2181 -cmd clusterprop -name urlScheme -val https' >> /opt/logs/docker-compose-out.log &
+    #  ! test -d '/store/solr/Sitecore9_core_index_shard1_replica_n1'                    && sleep 6  && runuser solr -c '/opt/solr/server/scripts/cloud-scripts/zkcli.sh -z zoo-1:2181 -cmd upconfig -confdir /opt/solr/server/solr/configsets/sitecore_configs/conf -confname sitecore_configs' >> /opt/logs/docker-compose-out.log &
+    #  ! test -d '/store/solr/Sitecore9_core_index_shard1_replica_n1'                    && sleep 9  && runuser solr -c '/opt/solr/bin/solr create -c Sitecore9_core_index                   -d /opt/solr/server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1' >> /opt/logs/docker-compose-out.log &
+    #  ! test -d '/store/solr/Sitecore9_master_index_shard1_replica_n1'                  && sleep 12 && runuser solr -c '/opt/solr/bin/solr create -c Sitecore9_master_index                 -d /opt/solr/server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1' >> /opt/logs/docker-compose-out.log &
+    #  ! test -d '/store/solr/Sitecore9_web_index_shard1_replica_n1'                     && sleep 15 && runuser solr -c '/opt/solr/bin/solr create -c Sitecore9_web_index                    -d /opt/solr/server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1' >> /opt/logs/docker-compose-out.log &
+    #  ! test -d '/store/solr/Sitecore9_marketingdefinitions_master_shard1_replica_n1'   && sleep 18 && runuser solr -c '/opt/solr/bin/solr create -c Sitecore9_marketingdefinitions_master  -d /opt/solr/server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1' >> /opt/logs/docker-compose-out.log &
+    #  ! test -d '/store/solr/Sitecore9_marketingdefinitions_web_shard1_replica_n1'      && sleep 21 && runuser solr -c '/opt/solr/bin/solr create -c Sitecore9_marketingdefinitions_web     -d /opt/solr/server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1' >> /opt/logs/docker-compose-out.log &
+    #  ! test -d '/store/solr/Sitecore9_marketing_asset_index_master_shard1_replica_n1'  && sleep 24 && runuser solr -c '/opt/solr/bin/solr create -c Sitecore9_marketing_asset_index_master -d /opt/solr/server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1' >> /opt/logs/docker-compose-out.log &
+    #  ! test -d '/store/solr/Sitecore9_marketing_asset_index_web_shard1_replica_n1'     && sleep 27 && runuser solr -c '/opt/solr/bin/solr create -c Sitecore9_marketing_asset_index_web    -d /opt/solr/server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1' >> /opt/logs/docker-compose-out.log &
+    #  ! test -d '/store/solr/Sitecore9_testing_index_shard1_replica_n1'                 && sleep 30 && runuser solr -c '/opt/solr/bin/solr create -c Sitecore9_testing_index                -d /opt/solr/server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1' >> /opt/logs/docker-compose-out.log &
+    #  ! test -d '/store/solr/Sitecore9_suggested_test_index_shard1_replica_n1'          && sleep 33 && runuser solr -c '/opt/solr/bin/solr create -c Sitecore9_suggested_test_index         -d /opt/solr/server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1' >> /opt/logs/docker-compose-out.log &
+    #  ! test -d '/store/solr/Sitecore9_fxm_master_index_shard1_replica_n1'              && sleep 36 && runuser solr -c '/opt/solr/bin/solr create -c Sitecore9_fxm_master_index             -d /opt/solr/server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1' >> /opt/logs/docker-compose-out.log &
+    #  ! test -d '/store/solr/Sitecore9_fxm_web_index_shard1_replica_n1'                 && sleep 39 && runuser solr -c '/opt/solr/bin/solr create -c Sitecore9_fxm_web_index                -d /opt/solr/server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1' >> /opt/logs/docker-compose-out.log &
+    #  ! test -d '/store/solr/Sitecore9_xdb_shard1_replica_n1'                           && sleep 42 && runuser solr -c '/opt/solr/bin/solr create -c Sitecore9_xdb                          -d /opt/solr/server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1' >> /opt/logs/docker-compose-out.log &
+    #  ! test -d '/store/solr/Sitecore9_xdb_rebuild_shard1_replica_n1'                   && sleep 45 && runuser solr -c '/opt/solr/bin/solr create -c Sitecore9_xdb_rebuild                  -d /opt/solr/server/solr/configsets/sitecore_configs/conf -n sitecore_configs -shards 1 -replicationFactor 1' >> /opt/logs/docker-compose-out.log &
+    #  cd /opt/docker-solr/scripts/
+    #  runuser solr -c 'docker-entrypoint.sh solr-foreground'"
     ports:
       - 8081:8081
     volumes:
@@ -111,7 +143,7 @@ services:
       SOLR_SSL_WANT_CLIENT_AUTH: "false"
       # SSL Certificates contain host/ip "peer name" information that is validated by default. Setting
       # this to false can be useful to disable these checks when re-using a certificate on many hosts
-      #SOLR_SSL_CHECK_PEER_NAME: "true"
+      SOLR_SSL_CHECK_PEER_NAME: "true"
       # Override Key/Trust Store types if necessary
       SOLR_SSL_KEY_STORE_TYPE: JKS
       SOLR_SSL_TRUST_STORE_TYPE: JKS
