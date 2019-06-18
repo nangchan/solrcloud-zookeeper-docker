@@ -116,4 +116,5 @@ RUN powershell New-WebSite -name "Sitecore9.identityserver" -PhysicalPath "%Syst
 # ===========================
 
 # Windows containers are missing host.docker.internal so must add explicitly
+# Single-quote needed since double-quote will error out powershell command for some reason
 RUN powershell Add-Content C:\Windows\System32\drivers\etc\hosts '10.0.75.1 host.docker.internal'

@@ -30,6 +30,10 @@
 # - Host can connect using [hostname].local (eg. sitecore-xp.local) after automatic domain name registration
 # - Linux containers can reach gateway via gateway.docker.internal
 
+# LCOW Limitations:
+# - Cannot set specific user
+# - Unable to stop container therefore you must set restart=no and restart Docker service
+
 # NOTE: For windows MUST set [host-ip] for host.docker.internal in ./sitecore/Dockerfile
 
 version: '3.7'
