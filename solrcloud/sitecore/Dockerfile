@@ -39,6 +39,13 @@ RUN powershell Enable-WindowsOptionalFeature -Online -FeatureName IIS-HttpCompre
 
 RUN powershell Enable-WindowsOptionalFeature -Online -FeatureName IIS-ASPNET45
 
+# Extra Options
+#RUN powershell Enable-WindowsOptionalFeature -Online -FeatureName IIS-HttpCompressionDynamic
+#RUN powershell Enable-WindowsOptionalFeature -Online -FeatureName IIS-NetFxExtensibility
+#RUN powershell Enable-WindowsOptionalFeature -Online -FeatureName IIS-ODBCLogging
+#RUN powershell Enable-WindowsOptionalFeature -Online -FeatureName IIS-URLAuthorization
+#RUN powershell Enable-WindowsOptionalFeature -Online -FeatureName IIS-HostableWebCore
+RUN powershell Enable-WindowsOptionalFeature -Online -FeatureName IIS-IPSecurity
 
 # Install IIS Windows Management Server
 # On Client Install IIS Manager for Remote Administration 1.2 - https://www.iis.net/downloads/microsoft/iis-manager
@@ -65,6 +72,12 @@ RUN powershell choco install -y nodejs-lts
 RUN powershell choco install -y UrlRewrite
 RUN powershell choco install -y webdeploy
 
+# Install Sitecore 9 Identity Server dependencies
+RUN powershell choco install -y dotnetcore-windowshosting
+#RUN powershell choco install -y dotnetcore
+#RUN powershell choco install -y dotnetcore-sdk
+#RUN powershell choco install -y jdk11
+
 # MISCELLANEOUS COMMANDS WHEN EXECUTING ON MACHINE
 # Start IIS Remote Manager service
 #RUN powershell Start-service WMSVC
@@ -85,16 +98,22 @@ RUN powershell choco install -y webdeploy
 # Install Sitecore9 WebSite
 # C:\inetpub\wwwroot\Sitecore9.local should be mapped or replaced
 
-RUN mkdir C:\inetpub\wwwroot\Sitecore9.local
+# Run import module if needed
 #RUN powershell Import-Module WebAdministration
+RUN mkdir C:\inetpub\wwwroot\Sitecore9.local
 RUN powershell New-WebAppPool -name "Sitecore9AppPool"
 RUN powershell New-WebSite -name "Sitecore9" -PhysicalPath "%SystemDrive%\inetpub\wwwroot\Sitecore9.local" -HostHeader "Sitecore9.dev.local" -ApplicationPool "Sitecore9AppPool"
 
+RUN mkdir C:\inetpub\wwwroot\Sitecore9.xconnect
+RUN powershell New-WebAppPool -name "Sitecore9XconnectAppPool"
+RUN powershell New-WebSite -name "Sitecore9.xconnect" -PhysicalPath "%SystemDrive%\inetpub\wwwroot\Sitecore9.xconnect" -HostHeader "Sitecore9.xconnect" -ApplicationPool "Sitecore9XconnectAppPool"
+
+RUN mkdir C:\inetpub\wwwroot\Sitecore9.identityserver
+RUN powershell New-WebAppPool -name "Sitecore9IdentityServerAppPool"
+RUN powershell New-WebSite -name "Sitecore9.identityserver" -PhysicalPath "%SystemDrive%\inetpub\wwwroot\Sitecore9.identityserver" -HostHeader "Sitecore9.identityserver" -ApplicationPool "Sitecore9IdentityServerAppPool"
 
 # UPDATE FOR YOUR ENVIRONMENT
 # ===========================
 
-# Add link back to docker host
-RUN powershell Add-Content C:\Windows\System32\drivers\etc\hosts '172.29.160.1 docker-host.local'
-RUN powershell Add-Content C:\Windows\System32\drivers\etc\hosts '172.29.160.1 Sitecore9.identityserver'
-RUN powershell Add-Content C:\Windows\System32\drivers\etc\hosts '172.29.160.1 Sitecore9.xconnect'
+# Windows containers are missing host.docker.internal so must add explicitly
+RUN powershell Add-Content C:\Windows\System32\drivers\etc\hosts '10.0.75.1 host.docker.internal'

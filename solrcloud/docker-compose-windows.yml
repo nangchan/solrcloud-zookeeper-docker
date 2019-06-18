@@ -1,0 +1,39 @@
+# NOTE: Windows does not have host.docker.internal set therefore
+#       MUST set [host-ip] for host.docker.internal in ./sitecore/Dockerfile
+#       TTY used to have logs show up in Kitematic
+
+version: '3.7'
+services:
+  sitecore-xp:
+    build: ./sitecore
+    image: sitecore-xp
+    container_name: sitecore-xp
+    hostname: sitecore-xp
+    tty: true
+    ports:
+      - 8000:80
+      - 8800:443
+    volumes:
+      - ./data/sitecore-xp/Sitecore9.local:C:/inetpub/wwwroot/Sitecore9.local
+  sitecore-xc:
+    build: ./sitecore
+    image: sitecore-xc
+    container_name: sitecore-xc
+    hostname: sitecore-xc
+    tty: true
+    ports:
+      - 8001:80
+      - 8801:443
+    volumes:
+      - ./data/sitecore-xc/Sitecore9.xconnect:C:/inetpub/wwwroot/Sitecore9.xconnect
+  sitecore-id:
+    build: ./sitecore
+    image: sitecore-id
+    container_name: sitecore-id
+    hostname: sitecore-id
+    tty: true
+    ports:
+      - 8002:80
+      - 8802:443
+    volumes:
+      - ./data/sitecore-id/Sitecore9.identityserver:C:/inetpub/wwwroot/Sitecore9.identityserver
