@@ -36,6 +36,7 @@ services:
     restart: unless-stopped
     tty: true
     entrypoint: /bin/bash -c
+    # TODO: break-out commands to separate file in post-startup-scripts/create-index.sh
     command: |
       "touch /opt/logs/docker-compose-out.log
       ! test -d '/store/solr/Sitecore9_core_index_shard1_replica_n1'                    && sleep 5  && /opt/solr/server/scripts/cloud-scripts/zkcli.sh -z zoo-1:2181 -cmd clusterprop -name urlScheme -val https >> /opt/logs/docker-compose-out.log &
